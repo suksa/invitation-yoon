@@ -12,6 +12,38 @@
             body { touch-action: pan-y;}
             .pswp--open .pswp__zoom-wrap {transform: scale(1) !important;}
             .pswp--open .pswp__img {top: 50%; left: 50%; transform: translate(-50%, -50%);}
+            /* 배경음악 스피커 토글 */
+            .audio-toggle {
+                position: fixed;
+                top: 12px;
+                right: 15px;
+                width: 44px;
+                height: 44px;
+                border: none;
+                border-radius: 50%;
+                background: rgba(255, 255, 255, 0.9);
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                cursor: pointer;
+                z-index: 9999;
+                transition: transform 0.2s ease, box-shadow 0.2s ease;
+            }
+            .audio-toggle:active {
+                transform: scale(0.95);
+                box-shadow: 0 1px 6px rgba(0, 0, 0, 0.15);
+            }
+            .audio-toggle .speaker-icon {
+                font-size: 20px;
+                line-height: 1;
+            }
+            .audio-toggle[data-state="playing"] .speaker-icon {
+                color: #2c7a7b;
+            }
+            .audio-toggle[data-state="paused"] .speaker-icon {
+                color: #a0aec0;
+            }
         </style>
     <meta name="ROBOTS" content="NOINDEX">
     <meta property="og:url" content="https://mcard.barunsoncard.com/m/fdwrpu409414">
@@ -66,6 +98,10 @@
     <div class="loader_mcard" style="display: none;">
         <div class="lds-ellipsis"><div></div><div></div><div></div><div></div></div>
     </div>
+    <audio id="bg-audio" src="./DBiL4.mp3" preload="auto"></audio>
+    <button type="button" id="audioToggle" class="audio-toggle" data-state="paused" aria-label="배경음악 재생/정지" aria-pressed="false">
+        <span class="speaker-icon" aria-hidden="true">🔇</span>
+    </button>
 
     <!-- Google Tag Manager (noscript) -->
     <noscript>
@@ -647,6 +683,51 @@
         });
     });
 </script>
+    <script>
+        (function () {
+            const audio = document.getElementById("bg-audio");
+            const toggle = document.getElementById("audioToggle");
+
+            if (!audio || !toggle) {
+                return;
+            }
+
+            const speaker = toggle.querySelector(".speaker-icon");
+
+            const setState = (playing) => {
+                toggle.dataset.state = playing ? "playing" : "paused";
+                toggle.setAttribute("aria-pressed", playing ? "true" : "false");
+                if (speaker) {
+                    speaker.textContent = playing ? "🔊" : "🔇";
+                }
+                toggle.title = playing ? "배경음악 정지" : "배경음악 재생";
+            };
+
+            const tryPlay = () => {
+                return audio.play().then(() => {
+                    setState(true);
+                }).catch((err) => {
+                    console.warn("오디오 자동재생이 차단되었습니다.", err);
+                    setState(false);
+                });
+            };
+
+            audio.addEventListener("play", () => setState(true));
+            audio.addEventListener("pause", () => setState(false));
+
+            toggle.addEventListener("click", () => {
+                if (audio.paused) {
+                    tryPlay();
+                } else {
+                    audio.pause();
+                }
+            });
+
+            document.addEventListener("DOMContentLoaded", () => {
+                tryPlay();
+            });
+        })();
+    </script>
 
         <!-- 신랑 & 신부에게 마음 전하기 -->
     <div class="remittance">
