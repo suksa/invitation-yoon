@@ -45,6 +45,20 @@
             .audio-toggle[data-state="paused"] .speaker-icon {
                 color: #a0aec0;
             }
+            #fireworks-canvas {
+                position: absolute;
+                inset: 0;
+                width: 100vw;
+                height: 100vh;
+                pointer-events: none;
+                z-index: 9990;
+                mix-blend-mode: screen;
+                opacity: 0;
+                transition: opacity 0.6s ease;
+            }
+            #fireworks-canvas.fireworks-active {
+                opacity: 1;
+            }
         </style>
     <meta name="ROBOTS" content="NOINDEX">
     <meta property="og:url" content="https://mcard.barunsoncard.com/m/fdwrpu409414">
@@ -96,6 +110,7 @@
     <script src="./바른손카드 모바일청첩장_files/tmap.js.다운로드"></script>
 <script src="./바른손카드 모바일청첩장_files/jquery.mousewheel.min.js.다운로드"></script></head>
 <body>
+    <canvas id="fireworks-canvas" aria-hidden="true"></canvas>
     <div class="loader_mcard" style="display: none;">
         <div class="lds-ellipsis"><div></div><div></div><div></div><div></div></div>
     </div>
@@ -115,7 +130,7 @@
         <input type="hidden" id="eventDate" value="2025-12-14">
 
             
-    <div id="area1" idx="1" class="templatearea bindarea" style="height:1423px; "><div id="lottieBox" class="lottie_box"><span class="snow snow3" style="transform: translate3d(835.264px, 1284.35px, 0px);"></span><span class="snow snow1" style="transform: translate3d(248.659px, 486.274px, 0px);"></span><span class="snow snow2" style="transform: translate3d(112.537px, 821.682px, 0px);"></span><span class="snow snow4" style="transform: translate3d(644.593px, 1914.14px, 0px);"></span><span class="snow snow2" style="transform: translate3d(758.6px, 1445.45px, 0px);"></span><span class="snow snow3" style="transform: translate3d(273.681px, 1682.86px, 0px);"></span><span class="snow snow3" style="transform: translate3d(889.13px, 1307.64px, 0px);"></span><span class="snow snow4" style="transform: translate3d(52.0645px, 375.157px, 0px);"></span><span class="snow snow4" style="transform: translate3d(122.418px, 1189.01px, 0px);"></span><span class="snow snow5" style="transform: translate3d(350.43px, 1542.62px, 0px);"></span><span class="snow snow2" style="transform: translate3d(466.475px, 1145.15px, 0px);"></span><span class="snow snow3" style="transform: translate3d(231.368px, -96.7024px, 0px);"></span><span class="snow snow1" style="transform: translate3d(464.506px, 2035.59px, 0px);"></span><span class="snow snow2" style="transform: translate3d(982.218px, 704.421px, 0px);"></span></div>
+    <div id="area1" idx="1" class="templatearea bindarea" style="height:1423px; ">
         
     <div id="14901138" class="item ITC02" style="position:absolute; top:0px; left: 0px;">
         <img class="img" src="./바른손카드 모바일청첩장_files/d44a2491-66d9-42e9-a617-d498c91510d2.png" style="width:800px; height:1423px;" alt="image" draggable="false">
@@ -1208,6 +1223,147 @@
             var mapUrl = window.location.origin+'/m2/mapredirect?' + params.join('&');
 
         }
+    </script>
+    <script>
+        (function () {
+            const canvas = document.getElementById('fireworks-canvas');
+            if (!canvas || !canvas.getContext) return;
+
+            const ctx = canvas.getContext('2d');
+            let width = 0;
+            let height = 0;
+            const particles = [];
+            const rockets = [];
+            const colors = ['#ff6b6b', '#ffd166', '#4cc9f0', '#9b5de5', '#f72585', '#b8f2e6'];
+
+            function resize() {
+                const dpr = window.devicePixelRatio || 1;
+                width = window.innerWidth;
+                height = window.innerHeight;
+                canvas.width = width * dpr;
+                canvas.height = height * dpr;
+                canvas.style.width = '100%';
+                canvas.style.height = '100%';
+                ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            }
+
+            window.addEventListener('resize', resize);
+            resize();
+
+            function Particle(x, y, color, size = Math.random() * 2 + 1.2) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = Math.random() * 4 + 2;
+                this.x = x;
+                this.y = y;
+                this.vx = Math.cos(angle) * speed;
+                this.vy = Math.sin(angle) * speed;
+                this.alpha = 1;
+                this.size = size;
+                this.color = color;
+            }
+
+            Particle.prototype.update = function () {
+                this.vy += 0.03;
+                this.vx *= 0.985;
+                this.vy *= 0.985;
+                this.x += this.vx;
+                this.y += this.vy;
+                this.alpha -= 0.012;
+                return this.alpha > 0 && this.y < height + 40 && this.x > -40 && this.x < width + 40;
+            };
+
+            Particle.prototype.draw = function () {
+                ctx.globalAlpha = Math.max(this.alpha, 0);
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            };
+
+            function Rocket() {
+                this.x = width * (0.15 + Math.random() * 0.7);
+                this.y = height + 20;
+                this.targetY = 120 + Math.random() * 100;
+                this.vx = (Math.random() - 0.5) * 1.4;
+                // 더 강하게 상승시켜 상단까지 도달하게 함
+                this.vy = -18 - Math.random() * 6;
+                this.color = colors[Math.floor(Math.random() * colors.length)];
+            }
+
+            Rocket.prototype.update = function () {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.vy += 0.05; // 중력은 약하게 적용
+                // targetY에 도달하면 터지도록 (y는 위로 갈수록 작아짐)
+                return this.y > this.targetY;
+            };
+
+            Rocket.prototype.draw = function () {
+                ctx.globalAlpha = 0.9;
+                ctx.fillStyle = this.color;
+                ctx.fillRect(this.x - 1, this.y - 10, 2.2, 12);
+            };
+
+            function burst(x, y, baseColor) {
+                const count = 70 + Math.random() * 45;
+                for (let i = 0; i < count; i++) {
+                    particles.push(new Particle(x, y, baseColor));
+                }
+                // brighter core
+                for (let i = 0; i < 18; i++) {
+                    particles.push(new Particle(x, y, '#ffffff', Math.random() * 1.2 + 0.8));
+                }
+            }
+
+            function loop() {
+                ctx.clearRect(0, 0, width, height);
+
+                // rockets
+                for (let i = rockets.length - 1; i >= 0; i--) {
+                    const r = rockets[i];
+                    if (r.update()) {
+                        r.draw();
+                    } else {
+                        burst(r.x, r.y, r.color);
+                        rockets.splice(i, 1);
+                    }
+                }
+
+                // particles
+                for (let i = particles.length - 1; i >= 0; i--) {
+                    const p = particles[i];
+                    if (p.update()) {
+                        p.draw();
+                    } else {
+                        particles.splice(i, 1);
+                    }
+                }
+
+                requestAnimationFrame(loop);
+            }
+
+            function startFireworks() {
+                canvas.classList.add('fireworks-active');
+                const launch = setInterval(function () {
+                    rockets.push(new Rocket());
+                    if (Math.random() > 0.65) rockets.push(new Rocket()); // 가끔 두 발 동시
+                }, 320);
+
+                setTimeout(function () {
+                    clearInterval(launch);
+                }, 10000);
+
+                setTimeout(function () {
+                    canvas.classList.remove('fireworks-active');
+                }, 13000);
+            }
+
+            loop();
+
+            window.addEventListener('load', function () {
+                setTimeout(startFireworks, 200);
+            });
+        })();
     </script>
     <!-- 이미지 저장 방지 CSS -->
     <style>
